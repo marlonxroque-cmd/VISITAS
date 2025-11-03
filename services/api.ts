@@ -1,17 +1,8 @@
 import type { User } from '../types';
 
-// --- INSTRUCTIONS ---
-// 1. Go to https://jsonbin.io/ and create a free account.
-// 2. Create a new JSON bin and paste the initial user data into it.
-// 3. Get your API Key from the "API Keys" page. This is your X_MASTER_KEY.
-// 4. Get the URL of your bin (click the copy icon next to the bin name). The last part of the URL is your BIN_ID.
-// 5. Replace the placeholder values below.
-
-const API_KEY = '$2a$10$A.e4V7G1Uo./2W3O6pLe6u1gEcH56GS32Y96lT0GTde05g/E5b31W'; // This is your X_MASTER_KEY
-const BIN_ID = '66a188f5e636bee0c7d877e1'; // The ID of your bin
-const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-const LATEST_URL = `${BIN_URL}/latest`;
-
+// The application will now use localStorage for data persistence
+// to ensure reliability and offline functionality.
+const LOCAL_STORAGE_KEY = 'visitor_app_users';
 
 const INITIAL_USERS: { [key: string]: User } = {
   'resident1': { 
@@ -54,46 +45,40 @@ const INITIAL_USERS: { [key: string]: User } = {
   'admin1': { role: 'admin', username: 'admin1', password: 'password' },
 };
 
-
+/**
+ * Fetches users from localStorage. If no users are found,
+ * it initializes the storage with a default set of users.
+ */
 export const fetchUsers = async (): Promise<{ [key: string]: User }> => {
-    const response = await fetch(LATEST_URL, {
-        method: 'GET',
-        headers: {
-            'X-Master-Key': API_KEY,
-            'X-Bin-Meta': 'false', // We only want the record content
-        },
-    });
-
-    if (!response.ok) {
-        // If the bin is empty or there's an error, it might return a 404 or other error code.
-        // In that case, we'll initialize it with default data.
-        console.warn(`Could not fetch data (status: ${response.status}). Initializing with default data.`);
+    try {
+        const storedUsers = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedUsers) {
+            const parsedUsers = JSON.parse(storedUsers);
+            // Basic validation to ensure essential users exist, otherwise reset.
+            if (parsedUsers.admin1 && parsedUsers.security1) {
+                return parsedUsers;
+            }
+        }
+        // If data is missing, invalid, or doesn't exist, initialize.
+        console.warn('No valid user data found in localStorage. Initializing with default data.');
+        await saveUsers(INITIAL_USERS);
+        return INITIAL_USERS;
+    } catch (error) {
+        console.error('Failed to parse user data from localStorage. Re-initializing.', error);
         await saveUsers(INITIAL_USERS);
         return INITIAL_USERS;
     }
-
-    const data = await response.json();
-    
-    // If the bin exists but is empty, initialize it.
-    if (Object.keys(data).length === 0) {
-        await saveUsers(INITIAL_USERS);
-        return INITIAL_USERS;
-    }
-    
-    return data;
 };
 
+/**
+ * Saves the provided user data to localStorage.
+ */
 export const saveUsers = async (users: { [key: string]: User }): Promise<void> => {
-    const response = await fetch(BIN_URL, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': API_KEY,
-        },
-        body: JSON.stringify(users),
-    });
-
-    if (!response.ok) {
-        throw new Error(`Failed to save data: ${response.statusText}`);
+    try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(users));
+    } catch (error) {
+        console.error('Failed to save data to localStorage:', error);
+        // This would typically only fail if storage is full.
+        throw new Error('Could not save user data. Storage might be full.');
     }
 };
