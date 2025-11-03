@@ -39,13 +39,18 @@ const QrValidator = ({ onBack }: { onBack: () => void }) => {
     try {
         const parsedData = JSON.parse(data) as VisitInfo;
 
-        if (parsedData.visitorName && parsedData.visitingWho && parsedData.validUntil && parsedData.identity && parsedData.visitReason) {
-            const now = new Date();
-            const validUntil = new Date(parsedData.validUntil);
-            if (now > validUntil) {
-                setValidationResult({ status: 'invalid', message: 'Este código QR ha expirado.', info: parsedData });
+        if (parsedData.visitorName && parsedData.visitingWho && parsedData.validUntil && parsedData.identity && parsedData.visitReason && parsedData.paymentStatus) {
+            
+            if (parsedData.paymentStatus === 'Pendiente de pago') {
+                 setValidationResult({ status: 'invalid', message: 'Acceso denegado por falta de pago del residente.', info: parsedData });
             } else {
-                setValidationResult({ status: 'valid', message: 'Acceso Permitido.', info: parsedData });
+                const now = new Date();
+                const validUntil = new Date(parsedData.validUntil);
+                if (now > validUntil) {
+                    setValidationResult({ status: 'invalid', message: 'Este código QR ha expirado.', info: parsedData });
+                } else {
+                    setValidationResult({ status: 'valid', message: 'Acceso Permitido.', info: parsedData });
+                }
             }
         } else {
             throw new Error("Formato de código QR inválido.");
@@ -126,6 +131,13 @@ const QrValidator = ({ onBack }: { onBack: () => void }) => {
                     <p><strong className="font-semibold text-brand-text/80">Visitante:</strong> {result.info.visitorName}</p>
                     <p><strong className="font-semibold text-brand-text/80">Identidad:</strong> {result.info.identity}</p>
                     <p><strong className="font-semibold text-brand-text/80">Visita a:</strong> {result.info.visitingWho}</p>
+                    {result.info.paymentStatus &&
+                        <p><strong className="font-semibold text-brand-text/80">Estado de Pago:</strong>
+                            <span className={`ml-2 font-bold ${result.info.paymentStatus === 'Al día' ? 'text-green-400' : 'text-red-400'}`}>
+                                {result.info.paymentStatus}
+                            </span>
+                        </p>
+                    }
                     {(result.info.vehicle || result.info.licensePlate) && 
                       <p><strong className="font-semibold text-brand-text/80">Vehículo:</strong> {result.info.vehicle || 'N/A'} ({result.info.licensePlate || 'N/A'})</p>
                     }

@@ -9,10 +9,11 @@ interface AdminPanelProps {
     onAddResident: (newResident: ResidentUser) => void;
     onEditResident: (username: string, updatedResident: Omit<ResidentUser, 'role' | 'username'>) => void;
     onDeleteResident: (username: string) => void;
+    onTogglePaymentStatus: (username: string) => void;
 }
 
 const emptyResident: Omit<ResidentUser, 'role'> = {
-    username: '', password: '', name: '', lastName: '', block: '', house: '', phone: '', email: ''
+    username: '', password: '', name: '', lastName: '', block: '', house: '', phone: '', email: '', paymentStatus: 'Al día',
 };
 
 interface ResidentModalProps {
@@ -69,13 +70,32 @@ const DeleteConfirmationModal = ({ residentToDelete, confirmDelete, closeModal }
     </div>
 );
 
+const ToggleSwitch = ({ checked, onChange }: { checked: boolean, onChange: () => void }) => {
+    const bgClass = checked ? 'bg-green-500' : 'bg-red-500';
+    const transitionClass = 'transition-all duration-300 ease-in-out';
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            onClick={onChange}
+            className={`${bgClass} ${transitionClass} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-brand-light focus:ring-offset-2 focus:ring-offset-brand-dark`}
+        >
+            <span
+                aria-hidden="true"
+                className={`${checked ? 'translate-x-5' : 'translate-x-0'} ${transitionClass} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0`}
+            />
+        </button>
+    );
+};
 
-const AdminPanel = ({ onLogout, residents, onAddResident, onEditResident, onDeleteResident }: AdminPanelProps) => {
+
+const AdminPanel = ({ onLogout, residents, onAddResident, onEditResident, onDeleteResident, onTogglePaymentStatus }: AdminPanelProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [editingResident, setEditingResident] = useState<ResidentUser | null>(null);
     const [residentToDelete, setResidentToDelete] = useState<ResidentUser | null>(null);
-    const [formData, setFormData] = useState(emptyResident);
+    const [formData, setFormData] = useState<Omit<ResidentUser, 'role'>>(emptyResident);
      
     useEffect(() => {
         if (editingResident) {
@@ -104,7 +124,7 @@ const AdminPanel = ({ onLogout, residents, onAddResident, onEditResident, onDele
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: value } as Omit<ResidentUser, 'role'>));
     };
 
     const handleFormSubmit = (e: React.FormEvent) => {
@@ -160,15 +180,26 @@ const AdminPanel = ({ onLogout, residents, onAddResident, onEditResident, onDele
                     <div className="space-y-2 p-4 max-h-[40vh] overflow-y-auto">
                         {residents.length > 0 ? residents.map(res => (
                             <div key={res.username} className="flex items-center justify-between p-4 bg-slate-800 rounded-lg hover:bg-slate-700/70 transition-colors duration-200">
-                                <div>
-                                    <p className="font-bold text-white text-lg">{res.name} {res.lastName}</p>
-                                    <p className="text-sm text-brand-text/70">{res.email}</p>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                    <p className="text-right text-brand-text/90">
+                                <div className="flex items-center gap-4">
+                                    <div>
+                                        <p className="font-bold text-white text-lg">{res.name} {res.lastName}</p>
+                                        <p className="text-sm text-brand-text/70">{res.email}</p>
+                                    </div>
+                                    <div className="text-right text-brand-text/90">
                                         <span className="font-semibold">Bloque {res.block}</span><br/>
                                         <span className="text-sm">Casa {res.house}</span>
-                                    </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                     <div className="flex flex-col items-center gap-1">
+                                        <span className={`text-xs font-bold`}>
+                                            {res.paymentStatus === 'Al día' ? 'Al día' : 'Pendiente'}
+                                        </span>
+                                        <ToggleSwitch
+                                            checked={res.paymentStatus === 'Al día'}
+                                            onChange={() => onTogglePaymentStatus(res.username)}
+                                        />
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => openModalForEdit(res)} className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition">
                                             <PencilIcon className="w-5 h-5" />

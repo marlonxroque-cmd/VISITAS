@@ -14,6 +14,7 @@ export interface ResidentUser extends BaseUser {
     house: string;
     phone: string;
     email: string;
+    paymentStatus: 'Al día' | 'Pendiente de pago';
 }
 
 export type User = BaseUser | ResidentUser;
@@ -29,4 +30,5 @@ export interface VisitInfo {
   visitDate: string; // ISO String
   validUntil: string; // ISO String
   id: string;
+  paymentStatus: 'Al día' | 'Pendiente de pago';
 }

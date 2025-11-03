@@ -18,7 +18,8 @@ const INITIAL_USERS: { [key: string]: User } = {
     block: 'A',
     house: '101',
     phone: '555-1234',
-    email: 'juan.perez@email.com'
+    email: 'juan.perez@email.com',
+    paymentStatus: 'Al día',
   },
    'resident2': { 
     role: 'resident', 
@@ -29,7 +30,8 @@ const INITIAL_USERS: { [key: string]: User } = {
     block: 'B',
     house: '205',
     phone: '555-5678',
-    email: 'maria.gonzalez@email.com'
+    email: 'maria.gonzalez@email.com',
+    paymentStatus: 'Pendiente de pago',
   },
   'security1': { role: 'security', username: 'security1', password: 'password' },
   'admin1': { role: 'admin', username: 'admin1', password: 'password' },
@@ -46,7 +48,8 @@ const App = () => {
     try {
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
-        setCurrentUser(JSON.parse(storedUser));
+        // Fix: Cast the parsed user from localStorage to the User type to resolve type error.
+        setCurrentUser(JSON.parse(storedUser) as User);
       }
     } catch (error) {
         console.error("Failed to parse user from localStorage", error);
@@ -104,7 +107,21 @@ const App = () => {
       return remainingUsers;
     });
   };
-
+  
+  const handleTogglePaymentStatus = (username: string) => {
+    setUsers(prevUsers => {
+      const userToUpdate = prevUsers[username];
+      if (userToUpdate && userToUpdate.role === 'resident') {
+        const resident = userToUpdate as ResidentUser;
+        const newStatus = resident.paymentStatus === 'Al día' ? 'Pendiente de pago' : 'Al día';
+        return {
+          ...prevUsers,
+          [username]: { ...resident, paymentStatus: newStatus }
+        };
+      }
+      return prevUsers;
+    });
+  };
 
   const renderContent = () => {
     if (!currentUser) {
@@ -146,6 +163,7 @@ const App = () => {
             onAddResident={handleAddResident}
             onEditResident={handleEditResident}
             onDeleteResident={handleDeleteResident}
+            onTogglePaymentStatus={handleTogglePaymentStatus}
           />
         );
       default:

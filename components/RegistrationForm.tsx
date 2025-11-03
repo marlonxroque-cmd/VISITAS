@@ -47,7 +47,8 @@ const RegistrationForm = ({ onLogout, residentInfo }: RegistrationFormProps) => 
       visitingWho,
       visitDate: now.toISOString(),
       validUntil: validUntil.toISOString(),
-      id: `visit_${Date.now()}`
+      id: `visit_${Date.now()}`,
+      paymentStatus: residentInfo.paymentStatus,
     });
   };
   
