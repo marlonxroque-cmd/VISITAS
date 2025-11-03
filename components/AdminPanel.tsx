@@ -192,34 +192,34 @@ const AdminPanel = ({
                         <div className="bg-slate-900/50 rounded-lg overflow-hidden">
                             <div className="space-y-2 p-4 max-h-[40vh] overflow-y-auto">
                                 {residents.length > 0 ? residents.map(res => (
-                                    <div key={res.username} className="flex items-center justify-between p-4 bg-slate-800 rounded-lg hover:bg-slate-700/70 transition-colors duration-200">
-                                        <div className="flex items-center gap-4">
+                                    <div key={res.username} className="bg-slate-800 rounded-lg p-4 flex flex-col gap-4 hover:bg-slate-700/70 transition-colors duration-200">
+                                        <div className="flex justify-between items-start gap-4">
                                             <div>
-                                                <p className="font-bold text-white text-lg">{res.name} {res.lastName}</p>
-                                                <p className="text-sm text-brand-text/70">{res.email}</p>
+                                                <p className="font-bold text-white text-lg truncate">{res.name} {res.lastName}</p>
+                                                <p className="text-sm text-brand-text/70 truncate">{res.email}</p>
                                             </div>
-                                            <div className="text-right text-brand-text/90">
-                                                <span className="font-semibold">Bloque {res.block}</span><br/>
-                                                <span className="text-sm">Casa {res.house}</span>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                <button onClick={() => openModalForEdit(res)} className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition" aria-label={`Editar a ${res.name}`}>
+                                                    <PencilIcon className="w-5 h-5" />
+                                                </button>
+                                                <button onClick={() => openDeleteModal(res)} className="p-2 text-red-400 hover:text-red-300 hover:bg-white/10 rounded-full transition" aria-label={`Eliminar a ${res.name}`}>
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                             <div className="flex flex-col items-center gap-1">
-                                                <span className={`text-xs font-bold`}>
+                                        <div className="flex justify-between items-center gap-4">
+                                            <div className="text-brand-text/90">
+                                                <span className="font-semibold">Bloque {res.block}</span>
+                                                <span className="text-sm">, Casa {res.house}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-bold ${res.paymentStatus === 'Al día' ? 'text-green-400' : 'text-red-400'}`}>
                                                     {res.paymentStatus === 'Al día' ? 'Al día' : 'Pendiente'}
                                                 </span>
                                                 <ToggleSwitch
                                                     checked={res.paymentStatus === 'Al día'}
                                                     onChange={() => onTogglePaymentStatus(res.username)}
                                                 />
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={() => openModalForEdit(res)} className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition">
-                                                    <PencilIcon className="w-5 h-5" />
-                                                </button>
-                                                <button onClick={() => openDeleteModal(res)} className="p-2 text-red-400 hover:text-red-300 hover:bg-white/10 rounded-full transition">
-                                                    <TrashIcon className="w-5 h-5" />
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
