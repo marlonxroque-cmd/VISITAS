@@ -1,0 +1,7 @@
+{
+  "name": "Visitor QR Validator",
+  "description": "An application to register visitors, generate QR codes for access, and validate them using a camera.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
