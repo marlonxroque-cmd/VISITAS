@@ -5,7 +5,7 @@ import Login from './components/Login';
 import RegistrationForm from './components/RegistrationForm';
 import QrValidator from './components/QrValidator';
 import AdminPanel from './components/AdminPanel';
-import type { User, ResidentUser } from './types';
+import type { User, ResidentUser, BaseUser } from './types';
 
 // Mock user data for demonstration
 const INITIAL_USERS: { [key: string]: User } = {
@@ -123,6 +123,36 @@ const App = () => {
     });
   };
 
+  const handleAddSecurity = (newSecurity: BaseUser) => {
+    setUsers(prevUsers => ({
+      ...prevUsers,
+      [newSecurity.username]: { ...newSecurity, role: 'security' }
+    }));
+  };
+
+  const handleEditSecurity = (username: string, updatedSecurity: Omit<BaseUser, 'role' | 'username'>) => {
+    setUsers(prevUsers => {
+      const userToUpdate = prevUsers[username];
+      if (userToUpdate && userToUpdate.role === 'security') {
+        if (!updatedSecurity.password) {
+          updatedSecurity.password = userToUpdate.password;
+        }
+        return {
+          ...prevUsers,
+          [username]: { ...userToUpdate, ...updatedSecurity }
+        };
+      }
+      return prevUsers;
+    });
+  };
+
+  const handleDeleteSecurity = (username: string) => {
+    setUsers(prevUsers => {
+      const { [username]: _, ...remainingUsers } = prevUsers;
+      return remainingUsers;
+    });
+  };
+
   const renderContent = () => {
     if (!currentUser) {
       return <Login onLogin={handleLogin} error={authError} />;
@@ -155,7 +185,10 @@ const App = () => {
             </div>
         );
       case 'admin':
-        const residents = Object.values(users).filter(u => u.role === 'resident') as ResidentUser[];
+        // Fix: Explicitly type the parameter in the 'filter' callback to avoid type inference issues.
+        const residents = Object.values(users).filter((u: User): u is ResidentUser => u.role === 'resident');
+        // Fix: Explicitly type the parameter 'u' to 'User' to resolve the error "Property 'role' does not exist on type 'unknown'".
+        const securityUsers = Object.values(users).filter((u: User): u is BaseUser => u.role === 'security');
         return (
           <AdminPanel 
             onLogout={handleLogout} 
@@ -164,6 +197,10 @@ const App = () => {
             onEditResident={handleEditResident}
             onDeleteResident={handleDeleteResident}
             onTogglePaymentStatus={handleTogglePaymentStatus}
+            securityUsers={securityUsers}
+            onAddSecurity={handleAddSecurity}
+            onEditSecurity={handleEditSecurity}
+            onDeleteSecurity={handleDeleteSecurity}
           />
         );
       default:

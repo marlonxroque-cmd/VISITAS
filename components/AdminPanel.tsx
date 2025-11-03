@@ -1,7 +1,9 @@
 // Fix: Create the AdminPanel component to resolve module errors.
 import React, { useState, useEffect } from 'react';
 import { LogoutIcon, PencilIcon, TrashIcon } from './icons';
-import type { ResidentUser } from '../types';
+import type { ResidentUser, BaseUser } from '../types';
+import ManageSecurity from './ManageSecurity';
+import ViewReports from './ViewReports';
 
 interface AdminPanelProps {
     onLogout: () => void;
@@ -10,6 +12,10 @@ interface AdminPanelProps {
     onEditResident: (username: string, updatedResident: Omit<ResidentUser, 'role' | 'username'>) => void;
     onDeleteResident: (username: string) => void;
     onTogglePaymentStatus: (username: string) => void;
+    securityUsers: BaseUser[];
+    onAddSecurity: (newSecurity: BaseUser) => void;
+    onEditSecurity: (username: string, updatedSecurity: Omit<BaseUser, 'role' | 'username'>) => void;
+    onDeleteSecurity: (username: string) => void;
 }
 
 const emptyResident: Omit<ResidentUser, 'role'> = {
@@ -90,12 +96,17 @@ const ToggleSwitch = ({ checked, onChange }: { checked: boolean, onChange: () =>
 };
 
 
-const AdminPanel = ({ onLogout, residents, onAddResident, onEditResident, onDeleteResident, onTogglePaymentStatus }: AdminPanelProps) => {
+const AdminPanel = ({ 
+    onLogout, 
+    residents, onAddResident, onEditResident, onDeleteResident, onTogglePaymentStatus,
+    securityUsers, onAddSecurity, onEditSecurity, onDeleteSecurity
+}: AdminPanelProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [editingResident, setEditingResident] = useState<ResidentUser | null>(null);
     const [residentToDelete, setResidentToDelete] = useState<ResidentUser | null>(null);
     const [formData, setFormData] = useState<Omit<ResidentUser, 'role'>>(emptyResident);
+    const [adminView, setAdminView] = useState<'main' | 'security' | 'reports'>('main');
      
     useEffect(() => {
         if (editingResident) {
@@ -148,7 +159,7 @@ const AdminPanel = ({ onLogout, residents, onAddResident, onEditResident, onDele
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto p-8 bg-brand-dark shadow-2xl rounded-2xl">
+        <div className="w-full max-w-4xl mx-auto p-8 bg-brand-dark shadow-2xl rounded-2xl min-h-[500px]">
             {isModalOpen && <ResidentModal 
                 editingResident={editingResident}
                 formData={formData}
@@ -168,64 +179,78 @@ const AdminPanel = ({ onLogout, residents, onAddResident, onEditResident, onDele
                     <LogoutIcon className="w-6 h-6" />
                 </button>
             </div>
-            
-            <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-semibold text-white">Residentes Registrados</h2>
-                    <button onClick={openModalForAdd} className="py-2 px-5 bg-brand-secondary hover:bg-brand-light text-white font-semibold rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
-                        Agregar Nuevo Residente
-                    </button>
-                </div>
-                <div className="bg-slate-900/50 rounded-lg overflow-hidden">
-                    <div className="space-y-2 p-4 max-h-[40vh] overflow-y-auto">
-                        {residents.length > 0 ? residents.map(res => (
-                            <div key={res.username} className="flex items-center justify-between p-4 bg-slate-800 rounded-lg hover:bg-slate-700/70 transition-colors duration-200">
-                                <div className="flex items-center gap-4">
-                                    <div>
-                                        <p className="font-bold text-white text-lg">{res.name} {res.lastName}</p>
-                                        <p className="text-sm text-brand-text/70">{res.email}</p>
-                                    </div>
-                                    <div className="text-right text-brand-text/90">
-                                        <span className="font-semibold">Bloque {res.block}</span><br/>
-                                        <span className="text-sm">Casa {res.house}</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                     <div className="flex flex-col items-center gap-1">
-                                        <span className={`text-xs font-bold`}>
-                                            {res.paymentStatus === 'Al día' ? 'Al día' : 'Pendiente'}
-                                        </span>
-                                        <ToggleSwitch
-                                            checked={res.paymentStatus === 'Al día'}
-                                            onChange={() => onTogglePaymentStatus(res.username)}
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => openModalForEdit(res)} className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition">
-                                            <PencilIcon className="w-5 h-5" />
-                                        </button>
-                                        <button onClick={() => openDeleteModal(res)} className="p-2 text-red-400 hover:text-red-300 hover:bg-white/10 rounded-full transition">
-                                            <TrashIcon className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )) : <p className="text-center p-8 text-brand-text/60">No hay residentes registrados.</p>}
-                    </div>
-                </div>
-            </div>
 
-            <div>
-                <h2 className="text-2xl font-semibold text-white mb-4">Otras Acciones</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                    <button className="w-full py-3 px-4 bg-slate-700 text-slate-400 rounded-lg cursor-not-allowed opacity-60">
-                        Gestionar Seguridad (Próximamente)
-                    </button>
-                    <button className="w-full py-3 px-4 bg-slate-700 text-slate-400 rounded-lg cursor-not-allowed opacity-60">
-                        Ver Reportes (Próximamente)
-                    </button>
-                </div>
-            </div>
+            {adminView === 'main' && (
+                <>
+                    <div className="mb-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-2xl font-semibold text-white">Residentes Registrados</h2>
+                            <button onClick={openModalForAdd} className="py-2 px-5 bg-brand-secondary hover:bg-brand-light text-white font-semibold rounded-lg shadow-md transition-all duration-300 transform hover:scale-105">
+                                Agregar Nuevo Residente
+                            </button>
+                        </div>
+                        <div className="bg-slate-900/50 rounded-lg overflow-hidden">
+                            <div className="space-y-2 p-4 max-h-[40vh] overflow-y-auto">
+                                {residents.length > 0 ? residents.map(res => (
+                                    <div key={res.username} className="flex items-center justify-between p-4 bg-slate-800 rounded-lg hover:bg-slate-700/70 transition-colors duration-200">
+                                        <div className="flex items-center gap-4">
+                                            <div>
+                                                <p className="font-bold text-white text-lg">{res.name} {res.lastName}</p>
+                                                <p className="text-sm text-brand-text/70">{res.email}</p>
+                                            </div>
+                                            <div className="text-right text-brand-text/90">
+                                                <span className="font-semibold">Bloque {res.block}</span><br/>
+                                                <span className="text-sm">Casa {res.house}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                             <div className="flex flex-col items-center gap-1">
+                                                <span className={`text-xs font-bold`}>
+                                                    {res.paymentStatus === 'Al día' ? 'Al día' : 'Pendiente'}
+                                                </span>
+                                                <ToggleSwitch
+                                                    checked={res.paymentStatus === 'Al día'}
+                                                    onChange={() => onTogglePaymentStatus(res.username)}
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={() => openModalForEdit(res)} className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition">
+                                                    <PencilIcon className="w-5 h-5" />
+                                                </button>
+                                                <button onClick={() => openDeleteModal(res)} className="p-2 text-red-400 hover:text-red-300 hover:bg-white/10 rounded-full transition">
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) : <p className="text-center p-8 text-brand-text/60">No hay residentes registrados.</p>}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 className="text-2xl font-semibold text-white mb-4">Otras Acciones</h2>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <button onClick={() => setAdminView('security')} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300">
+                                Gestionar Seguridad
+                            </button>
+                            <button onClick={() => setAdminView('reports')} className="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300">
+                                Ver Reportes
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {adminView === 'security' && <ManageSecurity 
+                onBack={() => setAdminView('main')} 
+                securityUsers={securityUsers}
+                onAddSecurity={onAddSecurity}
+                onEditSecurity={onEditSecurity}
+                onDeleteSecurity={onDeleteSecurity}
+            />}
+            {adminView === 'reports' && <ViewReports onBack={() => setAdminView('main')} residents={residents} />}
+
         </div>
     );
 };
