@@ -1,67 +1,61 @@
-// Fix: Create the main App component to handle application logic and resolve module errors.
-// Fix: Import useState and useEffect from React to resolve 'Cannot find name' errors and fix import syntax.
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import RegistrationForm from './components/RegistrationForm';
 import QrValidator from './components/QrValidator';
 import AdminPanel from './components/AdminPanel';
 import type { User, ResidentUser, BaseUser } from './types';
-
-// Mock user data for demonstration
-const INITIAL_USERS: { [key: string]: User } = {
-  'resident1': { 
-    role: 'resident', 
-    username: 'resident1', 
-    password: 'password',
-    name: 'Juan',
-    lastName: 'Pérez',
-    block: 'A',
-    house: '101',
-    phone: '555-1234',
-    email: 'juan.perez@email.com',
-    paymentStatus: 'Al día',
-  },
-   'resident2': { 
-    role: 'resident', 
-    username: 'resident2', 
-    password: 'password',
-    name: 'Maria',
-    lastName: 'Gonzalez',
-    block: 'B',
-    house: '205',
-    phone: '555-5678',
-    email: 'maria.gonzalez@email.com',
-    paymentStatus: 'Pendiente de pago',
-  },
-  'security1': { role: 'security', username: 'security1', password: 'password' },
-  'admin1': { role: 'admin', username: 'admin1', password: 'password' },
-};
+import * as api from './services/api'; // Import the API service
+import { SpinnerIcon } from './components/icons';
 
 const App = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<{ [key: string]: User }>(INITIAL_USERS);
+  const [users, setUsers] = useState<{ [key: string]: User }>({});
+  const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [view, setView] = useState<'default' | 'validator'>('default');
 
+  // Load initial data from the remote "database"
   useEffect(() => {
-    // Attempt to load user from localStorage on initial load
-    try {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        // Fix: Cast the parsed user from localStorage to the User type to resolve type error.
-        setCurrentUser(JSON.parse(storedUser) as User);
+    const loadData = async () => {
+      try {
+        const fetchedUsers = await api.fetchUsers();
+        setUsers(fetchedUsers);
+
+        // Attempt to load logged-in user from localStorage (session persistence)
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser) as User;
+          // Verify user still exists in the fetched data
+          if (fetchedUsers[parsedUser.username]) {
+             setCurrentUser(parsedUser);
+          } else {
+             localStorage.removeItem('currentUser');
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load users from API", error);
+        setAuthError("Could not connect to the database.");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-        console.error("Failed to parse user from localStorage", error);
-        localStorage.removeItem('currentUser');
-    }
+    };
+    loadData();
   }, []);
+
+  const persistUsers = async (updatedUsers: { [key: string]: User }) => {
+      try {
+        await api.saveUsers(updatedUsers);
+      } catch (error) {
+        console.error("Failed to save users to API", error);
+        // Here you could implement a rollback or notify the user
+      }
+  };
 
   const handleLogin = (username: string, password: string) => {
     const user = users[username];
     if (user && user.password === password) {
       const { password: _, ...userToStore } = user;
-      localStorage.setItem('currentUser', JSON.stringify(userToStore));
+      localStorage.setItem('currentUser', JSON.stringify(userToStore)); // Session management still local
       setCurrentUser(userToStore);
       setAuthError(null);
       setView('default');
@@ -77,83 +71,92 @@ const App = () => {
     setView('default');
   };
 
-  const handleAddResident = (newResident: ResidentUser) => {
-    setUsers(prevUsers => ({
-      ...prevUsers,
-      [newResident.username]: { ...newResident, role: 'resident' }
-    }));
+  const handleAddResident = async (newResident: ResidentUser) => {
+    // Fix: Directly assign the newResident object to avoid type widening issues with the 'role' property.
+    const updatedUsers = {
+      ...users,
+      [newResident.username]: newResident,
+    };
+    setUsers(updatedUsers);
+    await persistUsers(updatedUsers);
   };
 
-  const handleEditResident = (username: string, updatedResident: Omit<ResidentUser, 'role' | 'username'>) => {
-    setUsers(prevUsers => {
-      const userToUpdate = prevUsers[username];
-      if (userToUpdate && userToUpdate.role === 'resident') {
-        // If the password in the update data is empty, keep the old one.
-        if (!updatedResident.password) {
-          updatedResident.password = userToUpdate.password;
-        }
-        return {
-          ...prevUsers,
-          [username]: { ...userToUpdate, ...updatedResident }
-        };
+  const handleEditResident = async (username: string, updatedResident: Omit<ResidentUser, 'role' | 'username'>) => {
+    const userToUpdate = users[username];
+    if (userToUpdate && userToUpdate.role === 'resident') {
+      if (!updatedResident.password) {
+        updatedResident.password = userToUpdate.password;
       }
-      return prevUsers;
-    });
+      const updatedUsers = {
+        ...users,
+        [username]: { ...userToUpdate, ...updatedResident }
+      };
+      setUsers(updatedUsers);
+      await persistUsers(updatedUsers);
+    }
   };
 
-  const handleDeleteResident = (username: string) => {
-    setUsers(prevUsers => {
-      const { [username]: _, ...remainingUsers } = prevUsers;
-      return remainingUsers;
-    });
+  const handleDeleteResident = async (username: string) => {
+    const { [username]: _, ...remainingUsers } = users;
+    setUsers(remainingUsers);
+    await persistUsers(remainingUsers);
   };
-  
-  const handleTogglePaymentStatus = (username: string) => {
-    setUsers(prevUsers => {
-      const userToUpdate = prevUsers[username];
-      if (userToUpdate && userToUpdate.role === 'resident') {
-        const resident = userToUpdate as ResidentUser;
-        const newStatus = resident.paymentStatus === 'Al día' ? 'Pendiente de pago' : 'Al día';
-        return {
-          ...prevUsers,
-          [username]: { ...resident, paymentStatus: newStatus }
-        };
+
+  const handleTogglePaymentStatus = async (username: string) => {
+    const userToUpdate = users[username];
+    if (userToUpdate && userToUpdate.role === 'resident') {
+      const resident = userToUpdate as ResidentUser;
+      const newStatus = resident.paymentStatus === 'Al día' ? 'Pendiente de pago' : 'Al día';
+      const updatedUsers = {
+        ...users,
+        [username]: { ...resident, paymentStatus: newStatus }
+      };
+      setUsers(updatedUsers);
+      await persistUsers(updatedUsers);
+    }
+  };
+
+  const handleAddSecurity = async (newSecurity: BaseUser) => {
+    // Fix: Directly assign the newSecurity object to avoid type widening issues with the 'role' property.
+    const updatedUsers = {
+      ...users,
+      [newSecurity.username]: newSecurity,
+    };
+    setUsers(updatedUsers);
+    await persistUsers(updatedUsers);
+  };
+
+  const handleEditSecurity = async (username: string, updatedSecurity: Omit<BaseUser, 'role' | 'username'>) => {
+    const userToUpdate = users[username];
+    if (userToUpdate && userToUpdate.role === 'security') {
+      if (!updatedSecurity.password) {
+        updatedSecurity.password = userToUpdate.password;
       }
-      return prevUsers;
-    });
+      const updatedUsers = {
+        ...users,
+        [username]: { ...userToUpdate, ...updatedSecurity }
+      };
+      setUsers(updatedUsers);
+      await persistUsers(updatedUsers);
+    }
   };
 
-  const handleAddSecurity = (newSecurity: BaseUser) => {
-    setUsers(prevUsers => ({
-      ...prevUsers,
-      [newSecurity.username]: { ...newSecurity, role: 'security' }
-    }));
-  };
-
-  const handleEditSecurity = (username: string, updatedSecurity: Omit<BaseUser, 'role' | 'username'>) => {
-    setUsers(prevUsers => {
-      const userToUpdate = prevUsers[username];
-      if (userToUpdate && userToUpdate.role === 'security') {
-        if (!updatedSecurity.password) {
-          updatedSecurity.password = userToUpdate.password;
-        }
-        return {
-          ...prevUsers,
-          [username]: { ...userToUpdate, ...updatedSecurity }
-        };
-      }
-      return prevUsers;
-    });
-  };
-
-  const handleDeleteSecurity = (username: string) => {
-    setUsers(prevUsers => {
-      const { [username]: _, ...remainingUsers } = prevUsers;
-      return remainingUsers;
-    });
+  const handleDeleteSecurity = async (username: string) => {
+    const { [username]: _, ...remainingUsers } = users;
+    setUsers(remainingUsers);
+    await persistUsers(remainingUsers);
   };
 
   const renderContent = () => {
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4">
+                <SpinnerIcon className="w-12 h-12 animate-spin text-brand-light" />
+                <p className="text-xl text-brand-text/80">Cargando datos...</p>
+            </div>
+        )
+    }
+
     if (!currentUser) {
       return <Login onLogin={handleLogin} error={authError} />;
     }
@@ -162,7 +165,6 @@ const App = () => {
       case 'resident':
         return <RegistrationForm onLogout={handleLogout} residentInfo={currentUser as ResidentUser} />;
       case 'security':
-        // For security, they might have a main panel and then go to the validator
         if (view === 'validator') {
             return <QrValidator onBack={() => setView('default')} />;
         }
@@ -185,9 +187,7 @@ const App = () => {
             </div>
         );
       case 'admin':
-        // Fix: Explicitly type the parameter in the 'filter' callback to avoid type inference issues.
         const residents = Object.values(users).filter((u: User): u is ResidentUser => u.role === 'resident');
-        // Fix: Explicitly type the parameter 'u' to 'User' to resolve the error "Property 'role' does not exist on type 'unknown'".
         const securityUsers = Object.values(users).filter((u: User): u is BaseUser => u.role === 'security');
         return (
           <AdminPanel 
@@ -204,8 +204,6 @@ const App = () => {
           />
         );
       default:
-        // This case handles if currentUser is not null but has an invalid role.
-        // It's good practice for type safety.
         return <p>Role not recognized.</p>;
     }
   };
