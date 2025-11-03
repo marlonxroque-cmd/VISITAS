@@ -7,8 +7,8 @@ import type { User } from '../types';
 // 4. Get the URL of your bin (click the copy icon next to the bin name). The last part of the URL is your BIN_ID.
 // 5. Replace the placeholder values below.
 
-const API_KEY = '$2a$10$wGr1Ej7piCc5PuLwcyA3sOC3yvH0VECY8pLBHuprctpWTg75TmLs.'; // This is your X_MASTER_KEY
-const BIN_ID = '66a0487fe636bee0c7d7d242'; // The ID of your bin
+const API_KEY = '$2a$10$A.e4V7G1Uo./2W3O6pLe6u1gEcH56GS32Y96lT0GTde05g/E5b31W'; // This is your X_MASTER_KEY
+const BIN_ID = '66a188f5e636bee0c7d877e1'; // The ID of your bin
 const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 const LATEST_URL = `${BIN_URL}/latest`;
 
