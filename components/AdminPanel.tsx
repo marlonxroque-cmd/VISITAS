@@ -19,7 +19,7 @@ interface AdminPanelProps {
 }
 
 const emptyResident: Omit<ResidentUser, 'role'> = {
-    username: '', password: '', name: '', lastName: '', block: '', house: '', phone: '', email: '', paymentStatus: 'Al día',
+    username: '', password: '', name: '', lastName: '', block: '', house: '', phone: '', paymentStatus: 'Al día',
 };
 
 interface ResidentModalProps {
@@ -39,7 +39,6 @@ const ResidentModal = ({ editingResident, formData, handleFormChange, handleForm
                     <input type="text" name="name" placeholder="Nombre" value={formData.name} onChange={handleFormChange} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-brand-light focus:outline-none transition" required />
                     <input type="text" name="lastName" placeholder="Apellido" value={formData.lastName} onChange={handleFormChange} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-brand-light focus:outline-none transition" required />
                 </div>
-                <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleFormChange} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-brand-light focus:outline-none transition" required />
                 <input type="tel" name="phone" placeholder="Teléfono" value={formData.phone} onChange={handleFormChange} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-brand-light focus:outline-none transition" required />
                 <div className="grid grid-cols-2 gap-4">
                     <input type="text" name="block" placeholder="Bloque" value={formData.block} onChange={handleFormChange} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-brand-light focus:outline-none transition" required />
@@ -196,7 +195,7 @@ const AdminPanel = ({
                                         <div className="flex justify-between items-start gap-4">
                                             <div>
                                                 <p className="font-bold text-white text-lg truncate">{res.name} {res.lastName}</p>
-                                                <p className="text-sm text-brand-text/70 truncate">{res.email}</p>
+                                                <p className="text-sm text-brand-text/70 truncate">{res.phone}</p>
                                             </div>
                                             <div className="flex items-center gap-2 flex-shrink-0">
                                                 <button onClick={() => openModalForEdit(res)} className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/10 rounded-full transition" aria-label={`Editar a ${res.name}`}>

@@ -13,7 +13,6 @@ export interface ResidentUser extends BaseUser {
     block: string;
     house: string;
     phone: string;
-    email: string;
     paymentStatus: 'Al día' | 'Pendiente de pago';
 }
 
