@@ -16,35 +16,32 @@ const App = () => {
 
   // Load initial data from the remote "database"
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const fetchedUsers = await api.fetchUsers();
-        setUsers(fetchedUsers);
+    try {
+      const fetchedUsers = api.fetchUsers();
+      setUsers(fetchedUsers);
 
-        // Attempt to load logged-in user from localStorage (session persistence)
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser) as User;
-          // Verify user still exists in the fetched data
-          if (fetchedUsers[parsedUser.username]) {
-             setCurrentUser(parsedUser);
-          } else {
-             localStorage.removeItem('currentUser');
-          }
+      // Attempt to load logged-in user from localStorage (session persistence)
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser) as User;
+        // Verify user still exists in the fetched data
+        if (fetchedUsers[parsedUser.username]) {
+           setCurrentUser(parsedUser);
+        } else {
+           localStorage.removeItem('currentUser');
         }
-      } catch (error) {
-        console.error("Failed to load users from API", error);
-        setAuthError("Could not connect to the database.");
-      } finally {
-        setLoading(false);
       }
-    };
-    loadData();
+    } catch (error) {
+      console.error("Failed to load users from API", error);
+      setAuthError("Could not connect to the database.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const persistUsers = async (updatedUsers: { [key: string]: User }) => {
+  const persistUsers = (updatedUsers: { [key: string]: User }) => {
       try {
-        await api.saveUsers(updatedUsers);
+        api.saveUsers(updatedUsers);
       } catch (error) {
         console.error("Failed to save users to API", error);
         // Here you could implement a rollback or notify the user
@@ -71,17 +68,17 @@ const App = () => {
     setView('default');
   };
 
-  const handleAddResident = async (newResident: ResidentUser) => {
+  const handleAddResident = (newResident: ResidentUser) => {
     // Fix: Directly assign the newResident object to avoid type widening issues with the 'role' property.
     const updatedUsers = {
       ...users,
       [newResident.username]: newResident,
     };
     setUsers(updatedUsers);
-    await persistUsers(updatedUsers);
+    persistUsers(updatedUsers);
   };
 
-  const handleEditResident = async (username: string, updatedResident: Omit<ResidentUser, 'role' | 'username'>) => {
+  const handleEditResident = (username: string, updatedResident: Omit<ResidentUser, 'role' | 'username'>) => {
     const userToUpdate = users[username];
     if (userToUpdate && userToUpdate.role === 'resident') {
       if (!updatedResident.password) {
@@ -92,17 +89,17 @@ const App = () => {
         [username]: { ...userToUpdate, ...updatedResident }
       };
       setUsers(updatedUsers);
-      await persistUsers(updatedUsers);
+      persistUsers(updatedUsers);
     }
   };
 
-  const handleDeleteResident = async (username: string) => {
+  const handleDeleteResident = (username: string) => {
     const { [username]: _, ...remainingUsers } = users;
     setUsers(remainingUsers);
-    await persistUsers(remainingUsers);
+    persistUsers(remainingUsers);
   };
 
-  const handleTogglePaymentStatus = async (username: string) => {
+  const handleTogglePaymentStatus = (username: string) => {
     const userToUpdate = users[username];
     if (userToUpdate && userToUpdate.role === 'resident') {
       const resident = userToUpdate as ResidentUser;
@@ -112,21 +109,21 @@ const App = () => {
         [username]: { ...resident, paymentStatus: newStatus }
       };
       setUsers(updatedUsers);
-      await persistUsers(updatedUsers);
+      persistUsers(updatedUsers);
     }
   };
 
-  const handleAddSecurity = async (newSecurity: BaseUser) => {
+  const handleAddSecurity = (newSecurity: BaseUser) => {
     // Fix: Directly assign the newSecurity object to avoid type widening issues with the 'role' property.
     const updatedUsers = {
       ...users,
       [newSecurity.username]: newSecurity,
     };
     setUsers(updatedUsers);
-    await persistUsers(updatedUsers);
+    persistUsers(updatedUsers);
   };
 
-  const handleEditSecurity = async (username: string, updatedSecurity: Omit<BaseUser, 'role' | 'username'>) => {
+  const handleEditSecurity = (username: string, updatedSecurity: Omit<BaseUser, 'role' | 'username'>) => {
     const userToUpdate = users[username];
     if (userToUpdate && userToUpdate.role === 'security') {
       if (!updatedSecurity.password) {
@@ -137,14 +134,14 @@ const App = () => {
         [username]: { ...userToUpdate, ...updatedSecurity }
       };
       setUsers(updatedUsers);
-      await persistUsers(updatedUsers);
+      persistUsers(updatedUsers);
     }
   };
 
-  const handleDeleteSecurity = async (username: string) => {
+  const handleDeleteSecurity = (username: string) => {
     const { [username]: _, ...remainingUsers } = users;
     setUsers(remainingUsers);
-    await persistUsers(remainingUsers);
+    persistUsers(remainingUsers);
   };
 
   const renderContent = () => {
