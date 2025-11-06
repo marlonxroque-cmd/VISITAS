@@ -117,11 +117,11 @@ const RegistrationForm = ({ onLogout, residentInfo }: RegistrationFormProps) => 
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="vehicle" className="block text-sm font-medium text-brand-text mb-2">Vehículo (Opcional)</label>
+              <label htmlFor="vehicle" className="block text-sm font-medium text-brand-text mb-2">Vehículo</label>
               <input type="text" id="vehicle" value={vehicle} onChange={(e) => setVehicle(e.target.value)} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-brand-light focus:outline-none transition" />
             </div>
             <div>
-              <label htmlFor="licensePlate" className="block text-sm font-medium text-brand-text mb-2">Placa (Opcional)</label>
+              <label htmlFor="licensePlate" className="block text-sm font-medium text-brand-text mb-2">Placa</label>
               <input type="text" id="licensePlate" value={licensePlate} onChange={(e) => setLicensePlate(e.target.value)} className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:ring-2 focus:ring-brand-light focus:outline-none transition" />
             </div>
           </div>
